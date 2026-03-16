@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ᴺᵒˣ | Official Store</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+    <style>
+        :root { --red: #ff0000; --bg: #000; --card: #080808; --input: #0f0f0f; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        #starCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        nav { display: flex; justify-content: space-around; background: rgba(0,0,0,0.85); backdrop-filter: blur(12px); padding: 20px 0; border-bottom: 1px solid #1a1a1a; position: sticky; top: 0; z-index: 100; }
+        nav a { color: #444; text-decoration: none; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; }
+        nav a.active { color: var(--red); text-shadow: 0 0 10px var(--red); }
+        .container { padding: 20px; max-width: 500px; margin: auto; }
+        section { display: none; animation: fadeIn 0.5s ease-out; }
+        section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* GRID TIENDA */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .card { background: var(--card); border: 1px solid #111; border-radius: 20px; overflow: hidden; position: relative; border: 1px solid #1a1a1a; }
+        .card img { width: 100%; height: 160px; object-fit: cover; }
+        .card-info { padding: 12px; }
+        .card-name { font-size: 13px; font-weight: 800; display: block; color: #eee; height: 32px; overflow: hidden; }
+        .card-price { color: var(--red); font-weight: 900; font-size: 15px; margin-top: 5px; }
+        .del-btn { position: absolute; top: 10px; right: 10px; background: var(--red); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; font-weight: bold; z-index: 10; display: none; cursor: pointer; }
+
+        /* MODALES */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 1000; padding: 25px; box-sizing: border-box; overflow-y: auto; }
+        .modal-box { background: #0d0d0d; border: 1px solid #222; padding: 25px; border-radius: 25px; margin-top: 20px; }
+        input, textarea, select { width: 100%; padding: 15px; margin-bottom: 12px; background: var(--input); border: 1px solid #222; color: #fff; border-radius: 12px; box-sizing: border-box; font-size: 14px; outline: none; }
+        .btn-action { width: 100%; background: #fff; color: #000; padding: 18px; border: none; border-radius: 12px; font-weight: 900; font-size: 14px; cursor: pointer; }
+        
+        /* BOTÓN IA */
+        .btn-ia { background: linear-gradient(45deg, #6a11cb, #2575fc); color: white; padding: 8px 15px; border-radius: 8px; border: none; font-size: 10px; font-weight: bold; margin-bottom: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+
+        /* DETALLE */
+        #detailView { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 500; display: none; overflow-y: auto; }
+        .video-box { width: 100%; aspect-ratio: 16/9; background: #000; border-bottom: 2px solid var(--red); }
+        video { width: 100%; height: 100%; object-fit: contain; }
+        .detail-body { padding: 25px; }
+        .buy-now { background: var(--red); color: white; text-align: center; padding: 20px; border-radius: 15px; text-decoration: none; display: block; font-weight: 900; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <canvas id="starCanvas"></canvas>
+
+    <nav>
+        <a onclick="go('inicio', this)" class="active">HOME</a>
+        <a onclick="go('tienda', this)">TIENDA</a>
+        <a onclick="go('social', this)">SOCIAL</a>
+    </nav>
+
+    <div class="container">
+        <section id="inicio" class="active">
+            <div style="text-align: center; padding-top: 60px;">
+                <h1 style="font-size: 55px; margin: 0;">" <span style="color:var(--red)">ᴺᵒˣ</span> "</h1>
+                <p style="color:#666; font-weight:700;">OFFICIAL STORE</p>
+                <button onclick="go('tienda', document.querySelectorAll('nav a')[1])" class="btn-action" style="width:auto; padding:15px 40px; border-radius:50px; margin-top:20px;">ENTRAR</button>
+            </div>
+        </section>
+
+        <section id="tienda">
+            <h2 onclick="showLogin()" style="font-size: 10px; letter-spacing: 3px; color: #1a1a1a; text-align: center; margin-bottom: 30px; cursor: pointer;">ADMIN PANEL</h2>
+            <div class="grid" id="catalogList"></div>
+        </section>
+
+        <section id="social">
+            <h2 style="color:var(--red); letter-spacing: 2px; margin-bottom: 25px;">REDES</h2>
+            <a href="https://youtube.com/@gael_xits?si=Jq4jGx_h93GPOH9q" class="social-card" style="text-decoration:none">
+                <div class="social-icon yt-bg"><i class="fab fa-youtube"></i></div>
+                <div><div style="font-weight:900; font-size:14px; color:white;">YouTube</div><div style="font-size:11px; color:#555;">Tutoriales</div></div>
+            </a>
+            <a href="https://whatsapp.com/channel/0029Vb639Qn4tRrpGrvX2Q1N" class="social-card" style="text-decoration:none">
+                <div class="social-icon wa-bg"><i class="fab fa-whatsapp"></i></div>
+                <div><div style="font-weight:900; font-size:14px; color:white;">WhatsApp</div><div style="font-size:11px; color:#555;">Canal Oficial</div></div>
+            </a>
+        </section>
+    </div>
+
+    <div id="adminPanel" class="modal">
+        <div class="modal-box">
+            <h2 id="adminTitle" style="text-align:center; color:var(--red); font-size:14px;">BIENVENIDO</h2>
+            <input type="text" id="inName" placeholder="Nombre del Producto">
+            <input type="text" id="inPrice" placeholder="Precio">
+            <select id="inPhone">
+                <option value="16785322789">+1 678 532 2789 (GAEL)</option>
+                <option value="524381359522">+52 438 135 9522 (BRYAN)</option>
+                <option value="573024571822">+57 302 457 1822 (ALEX)</option>
+                <option value="573502358504">+57 350 235 8504 (NARCO)</option>
+            </select>
+            <input type="file" id="inImg" accept="image/*">
+            <input type="file" id="inVid" accept="video/*">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label style="font-size:11px; color:#666;">DESCRIPCIÓN:</label>
+                <button class="btn-ia" onclick="generarDescripcionIA()">
+                    <i class="fas fa-magic"></i> GENERAR CON IA
+                </button>
+            </div>
+            <textarea id="inDesc" placeholder="Escribe o usa la IA..." style="height: 100px;"></textarea>
+            
+            <button class="btn-action" id="btnSave" onclick="save()">PUBLICAR EN FIREBASE</button>
+            <button class="btn-action" style="background:#1a1a1a; color:#fff; margin-top:10px;" onclick="logout()">CERRAR SESIÓN</button>
+        </div>
+    </div>
+
+    <div id="loginModal" class="modal">
+        <div class="modal-box">
+            <h2 style="text-align:center; color:var(--red); font-size:16px;">IDENTIFICACIÓN</h2>
+            <input type="email" id="logEmail" placeholder="Gmail">
+            <input type="password" id="logPass" placeholder="Contraseña">
+            <button class="btn-action" onclick="checkLogin()">ENTRAR</button>
+            <p onclick="closeModal('loginModal')" style="text-align:center; font-size:11px; margin-top:15px; color:#444;">CANCELAR</p>
+        </div>
+    </div>
+
+    <div id="detailView">
+        <button style="position:fixed; top:20px; left:20px; z-index:100; background:rgba(0,0,0,0.6); color:white; border:none; padding:10px 18px; border-radius:30px;" onclick="closeDetail()">ATRÁS</button>
+        <div class="video-box" id="videoArea"></div>
+        <div class="detail-body">
+            <h2 id="dtTitle"></h2>
+            <div id="dtPrice" style="color:var(--red); font-size:24px; font-weight:900;"></div>
+            <p id="dtDesc" style="color:#aaa; line-height:1.6;"></p>
+            <a href="#" id="dtWA" class="buy-now">COMPRAR POR WHATSAPP</a>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN FIREBASE (Tus capturas)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLzztcDaaVJnczeTVLBK5MgybXFusUhtM",
+            authDomain: "nox-cheats.firebaseapp.com",
+            databaseURL: "https://nox-cheats-default-rtdb.firebaseio.com",
+            projectId: "nox-cheats",
+            storageBucket: "nox-cheats.firebasestorage.app",
+            messagingSenderId: "644166518586",
+            appId: "1:644166518586:web:3e17a93d5504af4bbdf203",
+            measurementId: "G-PSBVQTYEDZ"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let db = [];
+        let loggedIn = false;
+
+        const ADMINS = [
+            { email: "gaelxit@gmail.com", pass: "FREEFIRE21", name: "GAEL" },
+            { email: "Javidrfv@gmail.com", pass: "Freefiremax", name: "BRYAN" },
+            { email: "alexbaezperaltatendomoney@gmail.com", pass: "Marlon21z", name: "ALEX" },
+            { email: "Miguelalejandro@gmail.com", pass: "Narco xit nox", name: "NARCO" }
+        ];
+
+        // Lógica de la IA Nox
+        function generarDescripcionIA() {
+            const nombre = document.getElementById('inName').value;
+            if(!nombre) return alert("Primero pon el nombre del producto.");
+            
+            const txt = document.getElementById('inDesc');
+            txt.value = "Generando...";
+
+            setTimeout(() => {
+                const prompts = [
+                    `🔥 ¡LLEGÓ EL ${nombre.toUpperCase()}! 🔥\n\nOptimizado para el parche actual. Domina todas tus partidas con el mejor rendimiento y seguridad anti-ban. \n\n✅ 100% Calidad Nox\n✅ Soporte 24/7\n✅ Instalación rápida.`,
+                    `🚀 ADQUIERE YA: ${nombre.toUpperCase()} 🚀\n\nEl secreto de los mejores jugadores. No aceptes imitaciones, Nox te trae la versión definitiva para subir de rango hoy mismo.\n\n💎 Exclusivo\n💎 Seguro\n💎 Potente`,
+                    `🎯 ${nombre.toUpperCase()} - LA VERSIÓN V12 🎯\n\n¿Cansado de perder? Con nuestra tecnología ${nombre} llevarás tu cuenta al siguiente nivel. Producto testeado y garantizado por el equipo Nox Cheats.`
+                ];
+                txt.value = prompts[Math.floor(Math.random() * prompts.length)];
+            }, 1000);
+        }
+
+        database.ref('productos').on('value', (snapshot) => {
+            db = [];
+            snapshot.forEach((child) => { db.push({ id: child.key, ...child.val() }); });
+            render();
+        });
+
+        function showLogin() { document.getElementById('loginModal').style.display = 'block'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function checkLogin() {
+            const e = document.getElementById('logEmail').value;
+            const p = document.getElementById('logPass').value;
+            const user = ADMINS.find(a => a.email === e && a.pass === p);
+            if(user) {
+                loggedIn = true;
+                document.getElementById('adminTitle').innerText = "ADM: " + user.name;
+                closeModal('loginModal');
+                document.getElementById('adminPanel').style.display = 'block';
+                render();
+            } else { alert("Acceso denegado."); }
+        }
+
+        function logout() { loggedIn = false; closeModal('adminPanel'); render(); }
+
+        async function save() {
+            const btn = document.getElementById('btnSave');
+            const name = document.getElementById('inName').value;
+            const imgF = document.getElementById('inImg').files[0];
+            if(!name || !imgF) return alert("Falta nombre o imagen.");
+
+            btn.innerText = "SUBIENDO...";
+            btn.disabled = true;
+
+            const reader = (f) => new Promise(r => { const rd = new FileReader(); rd.readAsDataURL(f); rd.onload = () => r(rd.result); });
+            const imgB64 = await reader(imgF);
+            const vidF = document.getElementById('inVid').files[0];
+            const vidB64 = vidF ? await reader(vidF) : null;
+
+            database.ref('productos').push({
+                name, price: document.getElementById('inPrice').value,
+                phone: document.getElementById('inPhone').value,
+                desc: document.getElementById('inDesc').value,
+                img: imgB64, vid: vidB64
+            }).then(() => {
+                btn.innerText = "PUBLICAR EN FIREBASE";
+                btn.disabled = false;
+                closeModal('adminPanel');
+            });
+        }
+
+        function render() {
+            const list = document.getElementById('catalogList');
+            list.innerHTML = '';
+            db.forEach((item, i) => {
+                list.innerHTML += `
+                    <div class="card" onclick="openDet(${i})">
+                        <button class="del-btn" style="display:${loggedIn?'block':'none'}" onclick="del('${item.id}', event)">✕</button>
+                        <img src="${item.img}">
+                        <div class="card-info">
+                            <span class="card-name">${item.name}</span>
+                            <span class="card-price">${item.price}</span>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function del(id, e) { e.stopPropagation(); if(confirm("¿Eliminar?")) database.ref('productos/' + id).remove(); }
+        
+        function openDet(i) {
+            const p = db[i];
+            document.getElementById('dtTitle').innerText = p.name;
+            document.getElementById('dtPrice').innerText = p.price;
+            document.getElementById('dtDesc').innerText = p.desc || "Sin descripción.";
+            document.getElementById('videoArea').innerHTML = p.vid ? `<video src="${p.vid}" controls autoplay loop></video>` : '';
+            document.getElementById('dtWA').href = `https://wa.me/${p.phone}?text=Me+interesa:+${encodeURIComponent(p.name)}`;
+            document.getElementById('detailView').style.display = 'block';
+        }
+
+        function closeDetail() { document.getElementById('detailView').style.display='none'; document.getElementById('videoArea').innerHTML=''; }
+        function go(id, el) { 
+            document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(el) el.classList.add('active');
+        }
+
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        let s = [];
+        for(let i=0; i<50; i++) s.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height});
+        function anim() { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle = "red"; s.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 1, 0, Math.PI*2); ctx.fill(); p.y += 0.5; if(p.y > canvas.height) p.y = 0; }); requestAnimationFrame(anim); }
+        anim();
+    </script>
+</body>
+</html>
